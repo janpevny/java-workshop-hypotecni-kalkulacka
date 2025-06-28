@@ -117,7 +117,7 @@ public class LoanCalculatorUI extends JFrame {
         buttonPanel.add(exportButton);
 
         // Panel s tabulkou splátkového kalendáře
-        String[] columnNames = {"Měsíc", "Jistina", "Úrok", "Celkem", "Zbývá"};
+        String[] columnNames = { "Měsíc", "Jistina", "Úrok", "Celkem", "Zbývá" };
         tableModel = new DefaultTableModel(columnNames, 0);
         paymentTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(paymentTable); // Scrollbar pro tabulku
@@ -141,7 +141,8 @@ public class LoanCalculatorUI extends JFrame {
             int loanTermMonths = Integer.parseInt(loanTermField.getText());
 
             // Generování splátkového kalendáře pomocí LoanCalculator
-            List<Payment> schedule = LoanCalculator.generatePaymentSchedule(principal, annualInterestRate, loanTermMonths);
+            List<Payment> schedule = LoanCalculator.generatePaymentSchedule(principal, annualInterestRate,
+                    loanTermMonths);
 
             // Vymazání stávajících dat z tabulky
             tableModel.setRowCount(0);
@@ -157,12 +158,12 @@ public class LoanCalculatorUI extends JFrame {
 
             // Přidání nových dat do tabulky a výpočet celkových úroků a zaplacené jistiny
             for (Payment payment : schedule) {
-                tableModel.addRow(new Object[]{
-                    payment.getMonthNumber(),
-                    String.format("%.2f", payment.getPrincipalPaid()),
-                    String.format("%.2f", payment.getInterestPaid()),
-                    String.format("%.2f", payment.getTotalPayment()),
-                    String.format("%.2f", payment.getRemainingBalance())
+                tableModel.addRow(new Object[] {
+                        payment.getMonthNumber(),
+                        String.format("%.2f", payment.getPrincipalPaid()),
+                        String.format("%.2f", payment.getInterestPaid()),
+                        String.format("%.2f", payment.getTotalPayment()),
+                        String.format("%.2f", payment.getRemainingBalance())
                 });
                 totalInterest = totalInterest.add(payment.getInterestPaid());
                 totalPrincipalPaid = totalPrincipalPaid.add(payment.getPrincipalPaid());
@@ -181,7 +182,9 @@ public class LoanCalculatorUI extends JFrame {
 
         } catch (NumberFormatException e) {
             // Zobrazení chybové zprávy, pokud je vstup neplatný
-            JOptionPane.showMessageDialog(this, "Chybný vstup: Zadejte platná čísla pro výši úvěru, úrokovou sazbu a dobu splácení.", "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Chybný vstup: Zadejte platná čísla pro výši úvěru, úrokovou sazbu a dobu splácení.",
+                    "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -189,7 +192,7 @@ public class LoanCalculatorUI extends JFrame {
      * Aktualizuje koláčový graf zobrazující rozdělení jistiny a úroků.
      *
      * @param principalAmount Celková zaplacená jistina.
-     * @param interestAmount Celkové zaplacené úroky.
+     * @param interestAmount  Celkové zaplacené úroky.
      */
     private void updatePieChart(BigDecimal principalAmount, BigDecimal interestAmount) {
         // Vytvoření datové sady pro koláčový graf
@@ -199,16 +202,15 @@ public class LoanCalculatorUI extends JFrame {
 
         // Vytvoření koláčového grafu pomocí ChartFactory
         JFreeChart chart = ChartFactory.createPieChart(
-                "Rozdělení celkových splátek",   // Název grafu
-                dataset,                  // Data
-                true,                     // Zobrazit legendu
-                true,                     // Zobrazit tooltips
-                false                     // Nezobrazovat URL
+                "Rozdělení celkových splátek", // Název grafu
+                dataset, // Data
+                true, // Zobrazit legendu
+                true, // Zobrazit tooltips
+                false // Nezobrazovat URL
         );
 
         // Vytvoření panelu pro zobrazení grafu
         ChartPanel chartPanel = new ChartPanel(chart);
-        // chartPanel.setPreferredSize(new Dimension(chartPanelContainer.getWidth(), chartPanelContainer.getHeight())); // Tento řádek byl odstraněn
 
         // Odebrání starého grafu a přidání nového do kontejneru
         chartPanelContainer.removeAll();
@@ -224,9 +226,25 @@ public class LoanCalculatorUI extends JFrame {
     private void exportToCsv() {
         // Kontrola, zda je tabulka prázdná
         if (tableModel.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "Nelze exportovat prázdný splátkový kalendář.", "Chyba exportu", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Nelze exportovat prázdný splátkový kalendář.", "Chyba exportu",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        // Dialog pro delimiter
+        String[] options = { "Čárka (,)", "Středník (;)", "Tabulátor", "Svislá čára (|)" };
+        String[] delimiters = { ",", ";", "\t", "|" };
+        int choice = JOptionPane.showOptionDialog(this,
+                "Vyberte oddělovač pro CSV soubor:",
+                "Výběr oddělovače",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+        if (choice == -1)
+            return; // Zrušeno
+        String selectedDelimiter = delimiters[choice];
 
         // Otevření dialogu pro výběr souboru pro uložení
         JFileChooser fileChooser = new JFileChooser();
@@ -246,22 +264,29 @@ public class LoanCalculatorUI extends JFrame {
             }
 
             try {
-                // Znovu vygenerování splátkového kalendáře pro export (pro zajištění aktuálnosti dat)
-                List<Payment> schedule = LoanCalculator.generatePaymentSchedule(
-                    new BigDecimal(principalField.getText()),
-                    new BigDecimal(interestRateField.getText()),
-                    Integer.parseInt(loanTermField.getText())
-                );
+                // Získání vstupních parametrů z textových polí
+                BigDecimal principal = new BigDecimal(principalField.getText());
+                BigDecimal annualInterestRate = new BigDecimal(interestRateField.getText());
+                int loanTermMonths = Integer.parseInt(loanTermField.getText());
 
-                // Export kalendáře do CSV souboru
-                CsvExporter.exportScheduleToCsv(schedule, filePath);
-                JOptionPane.showMessageDialog(this, "Splátkový kalendář byl úspěšně exportován do souboru " + filePath, "Export úspěšný", JOptionPane.INFORMATION_MESSAGE);
+                // Znovu vygenerování splátkového kalendáře pro export (pro zajištění aktuálnosti dat)
+                List<Payment> schedule = LoanCalculator.generatePaymentSchedule(principal, annualInterestRate,
+                        loanTermMonths);
+
+                // Export kalendáře do CSV souboru s metadata
+                CsvExporter.exportScheduleToCsv(schedule, filePath, principal, annualInterestRate, loanTermMonths,
+                        selectedDelimiter);
+
+                JOptionPane.showMessageDialog(this, "Splátkový kalendář byl úspěšně exportován do souboru " + filePath,
+                        "Export úspěšný", JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException e) {
                 // Zobrazení chybové zprávy při problémech s exportem
-                JOptionPane.showMessageDialog(this, "Chyba při exportu do CSV: " + e.getMessage(), "Chyba exportu", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Chyba při exportu do CSV: " + e.getMessage(), "Chyba exportu",
+                        JOptionPane.ERROR_MESSAGE);
             } catch (NumberFormatException e) {
                 // Zobrazení chybové zprávy při neplatném formátu čísel
-                JOptionPane.showMessageDialog(this, "Chyba při čtení dat pro export. Zkontrolujte vstupní pole.", "Chyba", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Chyba při čtení dat pro export. Zkontrolujte vstupní pole.",
+                        "Chyba", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
