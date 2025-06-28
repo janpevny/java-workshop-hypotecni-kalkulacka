@@ -116,7 +116,7 @@ public class LoanCalculatorUI extends JFrame {
         });
         buttonPanel.add(exportButton);
 
-        // Panel s tabulkou splátkového kalendáře
+        // Tabulka splátkového kalendáře
         String[] columnNames = { "Měsíc", "Jistina", "Úrok", "Celkem", "Zbývá" };
         tableModel = new DefaultTableModel(columnNames, 0);
         paymentTable = new JTable(tableModel);
@@ -139,6 +139,32 @@ public class LoanCalculatorUI extends JFrame {
             BigDecimal principal = new BigDecimal(principalField.getText());
             BigDecimal annualInterestRate = new BigDecimal(interestRateField.getText());
             int loanTermMonths = Integer.parseInt(loanTermField.getText());
+
+            // --- Validace vstupních dat ---
+            if (principal.compareTo(BigDecimal.ZERO) <= 0) {
+                JOptionPane.showMessageDialog(this, "Výše úvěru musí být kladné číslo.", "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (loanTermMonths <= 0) {
+                JOptionPane.showMessageDialog(this, "Doba splácení musí být kladné číslo v měsících.", "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (loanTermMonths > 1200) { // Maximální doba splácení 100 let (1200 měsíců)
+                JOptionPane.showMessageDialog(this, "Doba splácení nesmí přesáhnout 1200 měsíců (100 let).", "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Ponecháváme stávající ošetření záporných sazeb a přidáme horní limit
+            if (annualInterestRate.compareTo(new BigDecimal("-100")) < 0) {
+                JOptionPane.showMessageDialog(this, "Roční úroková sazba nesmí být menší než -100%.", "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (annualInterestRate.compareTo(new BigDecimal("1000")) > 0) { // Příklad horního limitu 1000%
+                JOptionPane.showMessageDialog(this, "Roční úroková sazba nesmí přesáhnout 1000%.", "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // --- Konec validace ---
 
             // Generování splátkového kalendáře pomocí LoanCalculator
             List<Payment> schedule = LoanCalculator.generatePaymentSchedule(principal, annualInterestRate,
@@ -183,7 +209,7 @@ public class LoanCalculatorUI extends JFrame {
         } catch (NumberFormatException e) {
             // Zobrazení chybové zprávy, pokud je vstup neplatný
             JOptionPane.showMessageDialog(this,
-                    "Chybný vstup: Zadejte platná čísla pro výši úvěru, úrokovou sazbu a dobu splácení.",
+                    "Chybný vstup: Zadejte platná čísla pro výši úvěru, úrokovou sazbu a dobu splácení.\n(Použijte tečku jako desetinný oddělovač, např. 5.0)",
                     "Chyba vstupu", JOptionPane.ERROR_MESSAGE);
         }
     }
