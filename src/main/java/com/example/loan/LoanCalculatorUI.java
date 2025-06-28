@@ -159,10 +159,10 @@ public class LoanCalculatorUI extends JFrame {
             for (Payment payment : schedule) {
                 tableModel.addRow(new Object[]{
                     payment.getMonthNumber(),
-                    String.format("%.2f", payment.getPrincipalPaid()),
-                    String.format("%.2f", payment.getInterestPaid()),
-                    String.format("%.2f", payment.getTotalPayment()),
-                    String.format("%.2f", payment.getRemainingBalance())
+                    NumberFormatter.format(payment.getPrincipalPaid()),
+                    NumberFormatter.format(payment.getInterestPaid()),
+                    NumberFormatter.format(payment.getTotalPayment()),
+                    NumberFormatter.format(payment.getRemainingBalance())
                 });
                 totalInterest = totalInterest.add(payment.getInterestPaid());
                 totalPrincipalPaid = totalPrincipalPaid.add(payment.getPrincipalPaid());
@@ -172,9 +172,9 @@ public class LoanCalculatorUI extends JFrame {
             BigDecimal totalPaid = monthlyPayment.multiply(new BigDecimal(loanTermMonths));
 
             // Aktualizace popisků se souhrnnými výsledky
-            regularPaymentLabel.setText(String.format("Pravidelná splátka: %.2f Kč", monthlyPayment));
-            totalPaidLabel.setText(String.format("Celkem zaplaceno: %.2f Kč", totalPaid));
-            totalInterestLabel.setText(String.format("Zaplacené úroky: %.2f Kč", totalInterest));
+            regularPaymentLabel.setText("Pravidelná splátka: " + NumberFormatter.formatCurrency(monthlyPayment));
+            totalPaidLabel.setText("Celkem zaplaceno: " + NumberFormatter.formatCurrency(totalPaid));
+            totalInterestLabel.setText("Zaplacené úroky: " + NumberFormatter.formatCurrency(totalInterest));
 
             // Aktualizace koláčového grafu
             updatePieChart(totalPrincipalPaid, totalInterest);
